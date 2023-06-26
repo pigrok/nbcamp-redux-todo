@@ -1,49 +1,23 @@
-import React, { useCallback, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { commentTodoId } from "../redux/modules/reviews";
-import todos from "../redux/modules/todos";
+import shortid from "shortid";
 
 const Detail = () => {
-  const dispatch = useDispatch();
-
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const todo = todos.find((todo) => todo.id === id);
+  const dispatch = useDispatch();
 
-  const comments = useSelector((state) => commentTodoId(state, todo.id));
+  const todos = useSelector((state) => state.todos);
+  const comments = useSelector((state) => state.comments);
 
-  const [review, setReview] = useState({
-    content: "",
-    reviewId: "",
-    todoId: todo.id,
-  });
+  const [name, setName] = useState("");
+  const [content, setContent] = useState("");
 
-  const onChange = useCallback((event) => {
-    setReview((reviews) => ({
-      ...reviews,
-      content: event.target.value,
-    }));
-  }, []);
+  useEffect(() => {}, []);
 
-  const onSubmit = useCallback(
-    (event) => {
-      event.preventDefault();
-
-      const newReview = {
-        content: review.content,
-        reviewId: "",
-        todoId: todo.id,
-      };
-
-      dispatch({ type: "ADD_REVIEW", payload: newReview });
-
-      setReview({ content: "", reviewId: "", todoId: "" });
-    },
-    [dispatch, review.content, todo.id]
-  );
-
+  const todo = todos.filter((todo) => todo.id === id)[0];
   return (
     <div>
       {todo.id}
@@ -54,18 +28,59 @@ const Detail = () => {
       <br />
       {todo.isDone.toString()}
       <br />
-      <form onSubmit={onSubmit}>
-        <input
-          placeholder="review"
-          value={review.content}
-          onChange={onChange}
-        ></input>
-        <button type="submit">등록</button>
-      </form>
       <div>
-        {comments.map((comment) => (
-          <div key={comment.id}>{comment.content}</div>
-        ))}
+        <h3>댓글</h3>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+
+            dispatch({
+              type: "ADD_COMMENT",
+              payload: {
+                id: shortid.generate(),
+                writer: name,
+                content,
+                todoId: todo.id,
+              },
+            });
+          }}
+        >
+          <input
+            name="이름"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+          />
+          <input
+            name="내용"
+            value={content}
+            onChange={(e) => {
+              setContent(e.target.value);
+            }}
+          />
+          <button type="submit">작성</button>
+        </form>
+      </div>
+      <div>
+        {comments.map((comment) => {
+          return (
+            <div key={comment.id}>
+              <p> 작성자 :{comment.writer}</p>
+              <p> 내용 : {comment.contents}</p>
+              <button
+                onClick={() => {
+                  dispatch({
+                    type: "DELETE_COMMENT",
+                    payload: comment.id,
+                  });
+                }}
+              >
+                삭제
+              </button>
+            </div>
+          );
+        })}
       </div>
       <br />
       <button onClick={() => navigate("/")}>이전 화면으로</button>
